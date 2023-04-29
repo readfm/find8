@@ -22,11 +22,11 @@ class _Input8State extends State<Input8> {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(5),
-      height: widget.fontSize + 10,
+      height: widget.fontSize,
       child: TextFormField(
         focusNode: focusNode,
         autofocus: true,
-        textAlign: TextAlign.center,
+        textAlign: TextAlign.left,
         style: TextStyle(
           fontSize: widget.fontSize,
         ),

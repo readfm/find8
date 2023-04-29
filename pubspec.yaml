@@ -1,19 +1,18 @@
 name: xc8
-description: XC8
+description: Find8
 publish_to: none
 version: 1.0.0+1
 
 environment:
-  sdk: '>=2.19.4 <3.0.0'
+  sdk: '>=2.19.4 <=3.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  web_socket_channel: ^2.2.0
-  nostr_client: ^0.1.0
+  web_socket_channel: ^2.4.0
+  nostr_client: ^0.2.0
   bip340: ^0.0.4
   drag_and_drop_lists: ^0.3.3
-  file_picker_cross: ^4.6.0
   cupertino_icons: ^1.0.2
   http: ^0.13.5
   crypto: ^3.0.2
@@ -25,6 +24,12 @@ dependencies:
   drift: ^2.5.0
   qr_flutter: ^4.0.0
   webview_flutter: ^4.0.6
+  sqlite3: ^1.11.0
+  flutter_provider: ^2.1.0
+  provider: ^6.0.5
+  flutter_riverpod: ^2.3.4
+  riverpod: ^2.3.4
+  url_launcher: ^6.1.10
 
 dev_dependencies:
   flutter_test:

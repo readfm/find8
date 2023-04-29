@@ -2,44 +2,26 @@ import 'dart:async';
 import 'package:data8/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nostr_client/nostr_client.dart'
     show KeyPair, RandomKeyPairGenerator;
+import 'package:data8/providers/index.dart';
 import 'package:qr/qr.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:xc8/models/connection.dart';
 import 'line.dart';
 import 'models/app.dart';
+import 'providers/filter.dart';
 import 'widgets/input.dart';
+import 'widgets/status.dart';
 import 'widgets/time.dart';
 
-class Oo8App extends StatefulWidget {
-  Oo8Fractal app;
-
-  Oo8App(this.app, {super.key});
-
-  @override
-  State<Oo8App> createState() => _Oo8AppState();
-}
-
-class _Oo8AppState extends State<Oo8App> {
-  Oo8Fractal get app => widget.app;
-
+class Oo8App extends ConsumerWidget {
   final list = <TextEditingController>[];
-
-  List<Event> get events => app.events;
 
   @override
   void initState() {
-    super.initState();
-
-    _listener = app.listen(() {
-      setState(() {});
-    });
-
-    urlCtrl.addListener(() {
-      setState(() {});
-    });
-
+    /*
     controller
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -60,33 +42,38 @@ class _Oo8AppState extends State<Oo8App> {
           },
         ),
       );
+      */
   }
 
-  final urlCtrl = TextEditingController();
-
   StreamSubscription<List<Event>>? _listener;
-  var search = '';
 
   final focus = FocusNode();
 
+  /*
   late final _ctrlPrvKey =
       TextEditingController(text: app.user.keyPair.privateKey);
 
   late final _ctrlPubKey =
       TextEditingController(text: app.user.keyPair.publicKey);
-
+  */
+  /*
   final controller = WebViewController()
     ..setJavaScriptMode(JavaScriptMode.unrestricted)
     ..setBackgroundColor(const Color(0x00000000))
     ..loadRequest(Uri.parse('https://nostrica.com'));
+  */
 
   // gravity is our present moment, everything else is electromagnetic potential synchronizing into
 
   int selected = 0;
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     int i = 0;
+    final app = ref.watch(appProvider);
+    final events = ref.watch(filteredEventsProvider);
+
     return Scaffold(
+      /*
       appBar: AppBar(
         title: TextFormField(
           controller: urlCtrl,
@@ -120,17 +107,26 @@ class _Oo8AppState extends State<Oo8App> {
             ),
           ],
         ),
-      ),
-      body: Column(children: [
-        Container(
-          height: 40,
-          child: Input8Area(
+      ),*/
+      body: SingleChildScrollView(
+        child: Column(children: [
+          StatusArea(),
+          Input8Area(
             editable: selected == 0,
-            fontSize: 24,
+            onEdit: (value) {
+              final search = ref.read(searchProvider.notifier);
+              if (value.startsWith('.') && search.state != value) {
+                search.update(
+                  (state) => value.substring(1),
+                );
+              } else if (search.state.isNotEmpty) {
+                search.update(
+                  (state) => '',
+                );
+              }
+            },
             onSubmit: (m) {
               app.post(m);
-
-              setState(() {});
               /*
                       if (value.startsWith('.') && search != value) {
                         filter(
@@ -142,24 +138,19 @@ class _Oo8AppState extends State<Oo8App> {
                       */
             },
           ),
-        ),
-        Container(
-          height: 80,
-          color: Colors.black,
-          child: SingleChildScrollView(
-            child: RawKeyboardListener(
-              onKey: keyboard,
-              focusNode: focus,
-              child: Column(
-                children: [
-                  ...events
-                      .where((ev) => ev.content.contains('|'))
-                      .map((event) => Input8Area(
-                            key: ValueKey(event.id),
-                            event: event,
-                            editable: selected == ++i,
-                          )),
-                  /*
+          RawKeyboardListener(
+            onKey: keyboard,
+            focusNode: focus,
+            child: Column(
+              children: [
+                ...events.map(
+                  (event) => Input8Area(
+                    key: ValueKey(event.id),
+                    event: event,
+                    editable: selected == ++i,
+                  ),
+                ),
+                /*
               QrImage(
                 data: app.user.keyPair.publicKey,
                 version: QrVersions.auto,
@@ -167,20 +158,17 @@ class _Oo8AppState extends State<Oo8App> {
                 gapless: false,
               ),
               */
-                ],
-              ),
+              ],
             ),
           ),
-        ),
-        Expanded(
-          child: WebViewWidget(controller: controller),
-        ),
-      ]),
+        ]),
+      ),
     );
   }
 
   keyboard(RawKeyEvent k) {
     // if u hold option key
+    /*
     if (k.isAltPressed) {
       // if u press up or down
       if (k.isKeyPressed(LogicalKeyboardKey.arrowUp)) {
@@ -214,6 +202,7 @@ class _Oo8AppState extends State<Oo8App> {
         });
       }
     }
+    */
   }
 
 /*

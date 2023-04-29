@@ -1,34 +1,29 @@
+///import 'dart:io';
+//import 'package:sqlite3/open.dart';
+
+import 'package:data8/index.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
 import 'models/app.dart';
+import 'services/logger.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ProviderScope(
+      observers: [Logger()],
+      child: MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatefulWidget {
-  static late Oo8Fractal fractal;
-  const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  late Oo8Fractal app;
-
-  @override
-  void initState() {
-    MyApp.fractal = app = Oo8Fractal();
-    super.initState();
-  }
-
+class MyApp extends ConsumerWidget {
   // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
+  Widget build(ctx, ref) {
     return MaterialApp(
-      title: 'XC8',
+      title: 'Find8',
       debugShowCheckedModeBanner: false,
       darkTheme: ThemeData(
         colorScheme: ColorScheme.dark(),
@@ -40,7 +35,7 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: Oo8App(app),
+      home: Oo8App(),
     );
   }
 }

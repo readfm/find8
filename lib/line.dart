@@ -4,6 +4,7 @@ import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:just_the_tooltip/just_the_tooltip.dart';
 import 'package:regexpattern/regexpattern.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'main.dart';
 
@@ -49,6 +50,7 @@ class _FLineState extends State<FLine> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          /*
           if (options.isNotEmpty)
             Container(
               alignment: Alignment.center,
@@ -74,19 +76,33 @@ class _FLineState extends State<FLine> {
                 ],
               ),
             ),
+            */
           Container(
             width: double.infinity,
             height: widget.fontSize + 3,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ...elements,
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ...elements,
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _launchUrl(Uri url) async {
+    if (!await launchUrl(url)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Coul not open URL'),
+        ),
+      );
+    }
   }
 
   List<Widget> get elements {
@@ -122,6 +138,7 @@ class _FLineState extends State<FLine> {
                 "$before $option $after",
               );
             },
+            onLongPress: () {},
           ),
         );
       }
@@ -149,34 +166,42 @@ class _FLineState extends State<FLine> {
       }
     }
     return words
-        .map((e) => e is String && e.isSHA256()
-            ? JustTheTooltip(
-                key: Key(e.trim()),
-                tailLength: 10.0,
-                preferredDirection: AxisDirection.down,
-                isModal: false,
-                hoverShowDuration: Duration(seconds: 1),
-                backgroundColor: Colors.grey,
-                margin: const EdgeInsets.all(20.0),
-                child: Padding(
-                  padding: EdgeInsets.only(right: 4),
-                  child: Text(
-                    e,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color.fromARGB(255, 243, 184, 33),
-                    ),
-                    //style: linkStyle,
-                    /*
+        .map((e) {
+          return e is String && e.isSHA256()
+              ? JustTheTooltip(
+                  key: Key(e.trim()),
+                  tailLength: 10.0,
+                  preferredDirection: AxisDirection.down,
+                  isModal: false,
+                  hoverShowDuration: Duration(seconds: 1),
+                  backgroundColor: Colors.grey,
+                  margin: const EdgeInsets.all(20.0),
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 4),
+                    child: Text(
+                      e,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color.fromARGB(255, 243, 184, 33),
+                      ),
+                      //style: linkStyle,
+                      /*
                 recognizer: onOpen != null
                     ? (TapGestureRecognizer()..onTap = () => onOpen(element))
                     : null,
               ),*/
+                    ),
                   ),
-                ),
-                content: tipImage(e.trim()),
-              )
-            : e)
+                  content: InkWell(
+                    onTap: () {
+                      final uri = getUri(e.trim());
+                      launchUrl(uri);
+                    },
+                    child: tipImage(e.trim()),
+                  ),
+                )
+              : e;
+        })
         .map<Widget>((Object e) => e is Widget
             ? e
             : e is String
@@ -200,8 +225,16 @@ class _FLineState extends State<FLine> {
     return bytes != null
         ? Image.memory(bytes)
         : Image.network(
-            //"${FData.getHttp}/uploads/${e.trim()}",
-            "/uploads/$val",
+            getUri(val).toString(),
+            //"/uploads/$val",
           );
+  }
+
+  Uri getUri(String val) {
+    final uri = Uri.parse(val);
+    if (uri.scheme.isEmpty) {
+      return Uri.parse("${FData.getHttp}/uploads/$val");
+    }
+    return uri;
   }
 }

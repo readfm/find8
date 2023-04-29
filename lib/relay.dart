@@ -54,7 +54,8 @@ class Relay {
   }
 
   post(Map<String, dynamic> m) {
-    final request = jsonEncode(m);
+    final msg = {'cmd': 'post', 'item': m};
+    final request = jsonEncode(msg);
     _channel.sink.add(request);
   }
 

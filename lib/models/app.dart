@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:data8/data.dart';
 import 'package:data8/index.dart';
+import 'package:data8/providers/index.dart';
 import 'package:data8/tables/events.dart';
 import 'package:drift/drift.dart';
 import 'package:nostr_client/nostr_client.dart' hide Relay, Event;
@@ -13,31 +14,37 @@ import '../db/shared.dart';
 import '../db/main.dart';
 */
 import 'package:crypto/crypto.dart';
+import 'package:riverpod/riverpod.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import '../relay.dart';
 import 'package:bip340/bip340.dart' as bip340;
 import 'package:convert/convert.dart';
 
+import 'connection.dart';
 import 'user.dart';
 
 class Oo8Fractal {
   late final UserNostr user;
+  final Ref ref;
 
   final events = <Event>[];
   late Relay relay;
 
-  Oo8Fractal() {
+  Oo8Fractal(this.ref) {
     //String host = 'localhost:8080';
 //        Uri.base.authority.isEmpty ? 'localhost:8080' : Uri.base.authority;
 
-    relay =
-        Relay('ws${FData.isSecure ? 's' : ''}://${FData.host}', onReady: () {
+    relay = Relay(_url, onReady: () {
       //synch();
     });
     user = UserNostr();
     //_listen();
-
-    load();
   }
+
+  static String get _url => 'ws${FData.isSecure ? 's' : ''}://${FData.host}';
+  final connection = StateNotifierProvider<Connection, bool>((ref) {
+    return Connection(_url);
+  });
 
   final listeners = <Function>[];
   listen(Function() fb) {
@@ -73,45 +80,6 @@ class Oo8Fractal {
     );
   }
 
-  Stream<List<Event>>? stream;
-  load() {
-    final select = db.select(db.events);
-    //select.where((tbl) => tbl.syncAt.equals(0));
-    select.orderBy(
-      [
-        (tbl) => OrderingTerm(
-              expression: tbl.createdAt,
-              mode: OrderingMode.desc,
-            )
-      ],
-    );
-    stream = select.watch();
-    stream!.listen((list) {
-      events.clear();
-      for (final row in list) {
-        final event = Events.map[row.id] ??= row;
-        events.add(event);
-      }
-
-      trigger();
-    });
-    /*
-    (rows) {
-      rows.forEach((row) {
-        final m = row.toJson();
-        m.remove('syncAt');
-        m.remove('i');
-        m['created_at'] = m['createdAt'];
-        m['tags'] = [];
-        m.remove('createdAt');
-        //relay.send(m);
-      });
-
-      if (rows.isNotEmpty) Events.synched();
-    };
-    */
-  }
-
   Map<String, dynamic> make(Map<String, dynamic> m) {
     final now = DateTime.now(), nowSeconds = now.millisecondsSinceEpoch ~/ 1000;
     final kind = 1;
@@ -141,6 +109,30 @@ class Oo8Fractal {
       ...m,
     };
     return map;
+  }
+
+  void post(Map<String, dynamic> m) async {
+    final ev = make(m);
+    ev['syncAt'] = 0;
+    //relay.isConnected ? DateTime.now().millisecondsSinceEpoch ~/ 1000 : 0;
+
+    final event = Event.fromJson(ev);
+
+    events.insert(0, event);
+
+    await db.into(db.events).insert(event);
+
+    distribute(ev);
+  }
+
+  distribute(Map<String, dynamic> m) {
+    if (true) {
+      //final ev = transform(m);
+
+      final msg = {'cmd': 'post', 'item': m};
+      final conn = ref.watch(connection.notifier);
+      conn.post(msg);
+    }
   }
 
   void search(String term) {
@@ -176,24 +168,16 @@ class Oo8Fractal {
     return m;
   }
 
-  void post(Map<String, dynamic> m) async {
-    final ev = make(m);
-    ev['syncAt'] =
-        relay.isConnected ? DateTime.now().millisecondsSinceEpoch ~/ 1000 : 0;
-
-    final event = Event.fromJson(ev);
-
-    events.insert(0, event);
-
-    await db.into(db.events).insert(event);
-
-    distribute(ev);
-  }
-
-  distribute(Map<String, dynamic> m) {
-    if (relay.isConnected) {
-      //final ev = transform(m);
-      relay.send(m);
-    }
-  }
+  close() {}
 }
+
+// we should only use one db connection for the app
+final appProvider = Provider<Oo8Fractal>((ref) {
+  final app = Oo8Fractal(ref);
+
+  ref.onDispose(() {
+    app.close();
+  });
+
+  return app;
+});
