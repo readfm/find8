@@ -60,7 +60,7 @@ class _Input8AreaState extends State<Input8Area> {
           widget.event!.file;
           if (widget.editable) focus.requestFocus();
         },
-        onLongPress: () {
+        onDoubleTap: () {
           if (widget.event == null || widget.event!.file.isEmpty) return;
           final uri = getUri(widget.event!.file);
           _launchUrl(uri);
