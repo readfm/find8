@@ -13,7 +13,7 @@ class Time8Field extends StatelessWidget {
         bottom: 1,
         right: 4,
       ),
-      width: 98,
+      width: 80,
       height: 18,
       alignment: Alignment.centerRight,
       child: Text(

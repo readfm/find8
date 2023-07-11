@@ -2,30 +2,34 @@ import 'dart:convert';
 
 import 'package:data8/index.dart';
 import 'package:drift/drift.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:frac/frac.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-class Connection extends StateNotifier<bool> with FSocketMix {
+class Connection with FSocketMix {
   final String url;
 
-  Connection(this.url) : super(false) {
+  Connection(this.url) {
     connect();
   }
 
+  final isConnected = Frac<bool>(false);
+
   connect() {
     final uri = Uri.parse(url);
+    print('Connect: ' + this.url);
+
     try {
       _channel = WebSocketChannel.connect(uri)
         ..ready.then((_) {
           // set connected
           print('Connected to: $url');
-          state = true;
+          isConnected.value = true;
           synch();
         });
 
       _channel?.stream.listen(receive);
     } catch (e) {
-      state = false;
+      isConnected.value = false;
     }
   }
 
@@ -53,13 +57,14 @@ class Connection extends StateNotifier<bool> with FSocketMix {
     select.get().then((events) {
       for (var event in events) {
         final m = event.toJson();
-        post({'cmd': 'post', 'item': m});
+        post([m]);
       }
     });
   }
 
   WebSocketChannel? _channel;
 
+  @override
   handle(m) async {
     if (m['cmd'] == 're') {
       final now = DateTime.now(),
@@ -77,7 +82,7 @@ class Connection extends StateNotifier<bool> with FSocketMix {
     }
   }
 
-  post(Map<String, dynamic> m) {
+  post(m) {
     final request = jsonEncode(m);
     _channel?.sink.add(request);
   }

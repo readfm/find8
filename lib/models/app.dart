@@ -1,52 +1,56 @@
 import 'dart:convert';
-
-import 'package:data8/data.dart';
 import 'package:data8/index.dart';
-import 'package:data8/providers/index.dart';
-import 'package:data8/tables/events.dart';
-import 'package:drift/drift.dart';
-import 'package:nostr_client/nostr_client.dart' hide Relay, Event;
-/*
-import 'package:oo8/models/repo.dart';
-import 'package:oo8/models/user.dart';
-import 'package:oo8/utils.dart';
-import '../db/shared.dart';
-import '../db/main.dart';
-*/
+import 'package:frac/frac.dart';
 import 'package:crypto/crypto.dart';
-import 'package:riverpod/riverpod.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import '../relay.dart';
-import 'package:bip340/bip340.dart' as bip340;
+import 'package:path_provider/path_provider.dart';
+import 'package:xc8/enums/time.dart';
+import '../connections/pix8.dart';
+import '../enums/things.dart';
 import 'package:convert/convert.dart';
-
+import '../enums/view.dart';
+import '../services/signer.dart';
 import 'connection.dart';
 import 'user.dart';
+import '../init/unsupported.dart'
+    if (dart.library.ffi) '../init/native.dart'
+    if (dart.library.html) '../init/web.dart';
 
-class Oo8Fractal {
+class Oo8Fractal extends FChangeNotifier {
+  static String get _url => 'ws${FData.isSecure ? 's' : ''}://${FData.host}';
+  final connection = Connection(_url);
+  final pix8connection = Pix8Connection();
+
   late final UserNostr user;
-  final Ref ref;
 
+  Event? selected;
+
+  final listeners = <Function>[];
   final events = <Event>[];
-  late Relay relay;
+  //late Relay relay;
 
-  Oo8Fractal(this.ref) {
+  var thingsLayout = ThingsLayout.base;
+
+  var timeDisplay = TimeDisplay.stamp;
+  var viewDisplay = ViewDisplay.list;
+
+  static Future<void> initiate() async {
+    init();
+  }
+
+  Oo8Fractal() {
+    print('Init app');
     //String host = 'localhost:8080';
 //        Uri.base.authority.isEmpty ? 'localhost:8080' : Uri.base.authority;
-
+    /*
     relay = Relay(_url, onReady: () {
       //synch();
     });
+    */
     user = UserNostr();
+    init();
     //_listen();
   }
 
-  static String get _url => 'ws${FData.isSecure ? 's' : ''}://${FData.host}';
-  final connection = StateNotifierProvider<Connection, bool>((ref) {
-    return Connection(_url);
-  });
-
-  final listeners = <Function>[];
   listen(Function() fb) {
     listeners.add(fb);
   }
@@ -57,6 +61,7 @@ class Oo8Fractal {
     }
   }
 
+  /*
   _listen() async {
     //final lastSyncAt = await Events.lastSync();
     relay.stream.listen((Message m) {
@@ -79,6 +84,7 @@ class Oo8Fractal {
       ),
     );
   }
+  */
 
   Map<String, dynamic> make(Map<String, dynamic> m) {
     final now = DateTime.now(), nowSeconds = now.millisecondsSinceEpoch ~/ 1000;
@@ -96,6 +102,7 @@ class Oo8Fractal {
       message: id,
     );
 
+    final expires = m.remove('_expiresAfter');
     final map = {
       //'i': 0,
       'id': id,
@@ -106,8 +113,10 @@ class Oo8Fractal {
       'sig': sig,
       'file': '',
       'content': '',
+      'expiresAt': (expires > 0) ? (nowSeconds + expires) : 0,
       ...m,
     };
+
     return map;
   }
 
@@ -128,10 +137,7 @@ class Oo8Fractal {
   distribute(Map<String, dynamic> m) {
     if (true) {
       //final ev = transform(m);
-
-      final msg = {'cmd': 'post', 'item': m};
-      final conn = ref.watch(connection.notifier);
-      conn.post(msg);
+      connection.post([m]);
     }
   }
 
@@ -139,6 +145,7 @@ class Oo8Fractal {
     //repo.relay.req(Filter());
   }
 
+  /*
   synch() {
     if (relay.isConnected) {
       (db.select(db.events)..where((tbl) => tbl.syncAt.equals(0)))
@@ -158,6 +165,7 @@ class Oo8Fractal {
       });
     }
   }
+  */
 
   Map<String, dynamic> transform(Map<String, dynamic> m) {
     m.remove('syncAt');
@@ -171,6 +179,7 @@ class Oo8Fractal {
   close() {}
 }
 
+/*
 // we should only use one db connection for the app
 final appProvider = Provider<Oo8Fractal>((ref) {
   final app = Oo8Fractal(ref);
@@ -181,3 +190,4 @@ final appProvider = Provider<Oo8Fractal>((ref) {
 
   return app;
 });
+*/

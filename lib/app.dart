@@ -1,26 +1,39 @@
-import 'dart:async';
+import 'dart:convert';
+import 'dart:ui';
+
+import 'package:accordion/accordion.dart';
 import 'package:data8/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nostr_client/nostr_client.dart'
-    show KeyPair, RandomKeyPairGenerator;
-import 'package:data8/providers/index.dart';
-import 'package:qr/qr.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:xc8/models/connection.dart';
-import 'line.dart';
+import 'package:fractal_flutter/fractal_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_provider/flutter_provider.dart';
+import 'package:two8/areas/cube.dart';
+import 'package:two8/areas/face.dart';
+import 'package:velocity_x/velocity_x.dart';
+import 'package:xc8/drawers/main.dart';
+import 'package:yaml_writer/yaml_writer.dart';
+import 'enums/things.dart';
 import 'models/app.dart';
 import 'providers/filter.dart';
+import 'types/wrap.dart';
 import 'widgets/input.dart';
 import 'widgets/status.dart';
-import 'widgets/time.dart';
 
-class Oo8App extends ConsumerWidget {
+class Oo8App extends ConsumerStatefulWidget {
+  createState() => Oo8AppState();
+}
+
+class Oo8AppState extends ConsumerState<Oo8App> {
   final list = <TextEditingController>[];
+  final ctrlExpires = TextEditingController();
+
+  Gen? wrap;
 
   @override
   void initState() {
+    ctrlExpires.text = '0';
     /*
     controller
       ..setNavigationDelegate(
@@ -45,8 +58,6 @@ class Oo8App extends ConsumerWidget {
       */
   }
 
-  StreamSubscription<List<Event>>? _listener;
-
   final focus = FocusNode();
 
   /*
@@ -65,106 +76,42 @@ class Oo8App extends ConsumerWidget {
 
   // gravity is our present moment, everything else is electromagnetic potential synchronizing into
 
-  int selected = 0;
+  bool cube = false;
+
+  final pad = 56.0;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(context) {
     int i = 0;
-    final app = ref.watch(appProvider);
-    final events = ref.watch(filteredEventsProvider);
+    print('reApp');
+
+    final app = context.watch<Oo8Fractal>();
+    final event = app.selected;
 
     return Scaffold(
-      /*
-      appBar: AppBar(
-        title: TextFormField(
-          controller: urlCtrl,
-          onFieldSubmitted: (value) {
-            if (!value.contains('://')) value = 'https://$value';
-            controller.loadRequest(
-              Uri.parse(value),
-            );
-          },
-          decoration: InputDecoration(
-            hintText: 'URL',
-            border: InputBorder.none,
-          ),
-        ),
-      ),
-      drawer: Drawer(
-        child: Column(
-          children: [
-            DrawerHeader(
-              child: Column(
-                children: [
-                  ...events
-                      .where((ev) => !ev.content.contains('|'))
-                      .map((event) => Input8Area(
-                            key: ValueKey(event.id),
-                            event: event,
-                            editable: selected == ++i,
-                          )),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),*/
-      body: SingleChildScrollView(
-        child: Column(children: [
-          StatusArea(),
-          Input8Area(
-            editable: selected == 0,
-            onEdit: (value) {
-              final search = ref.read(searchProvider.notifier);
-              if (value.startsWith('.') && search.state != value) {
-                search.update(
-                  (state) => value.substring(1),
-                );
-              } else if (search.state.isNotEmpty) {
-                search.update(
-                  (state) => '',
-                );
-              }
-            },
-            onSubmit: (m) {
-              app.post(m);
-              /*
-                      if (value.startsWith('.') && search != value) {
-                        filter(
-                          value.substring(1),
-                        );
-                      } else if (search.isNotEmpty) {
-                        filter();
-                      }
-                      */
-            },
-          ),
-          RawKeyboardListener(
-            onKey: keyboard,
-            focusNode: focus,
-            child: Column(
-              children: [
-                ...events.map(
-                  (event) => Input8Area(
-                    key: ValueKey(event.id),
-                    event: event,
-                    editable: selected == ++i,
-                  ),
-                ),
-                /*
-              QrImage(
-                data: app.user.keyPair.publicKey,
-                version: QrVersions.auto,
-                size: 320,
-                gapless: false,
-              ),
-              */
-              ],
+      appBar: PreferredSize(
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: AppBar(
+              elevation: 0.0,
+              backgroundColor: Colors.black.withOpacity(0.2),
             ),
           ),
-        ]),
+        ),
+        preferredSize: Size(
+          double.infinity,
+          pad,
+        ),
       ),
+      drawer: Main8Drawer(),
+      extendBodyBehindAppBar: true,
+      body: app.viewDisplay.build(context),
+      //),
     );
   }
+
+  double slider = 8;
 
   keyboard(RawKeyEvent k) {
     // if u hold option key

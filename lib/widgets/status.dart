@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fractal_flutter/fractal_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:xc8/models/app.dart';
 
-class StatusArea extends ConsumerWidget {
-  const StatusArea({Key? key}) : super(key: key);
+class StatusArea extends StatelessWidget {
+  const StatusArea({Key? key});
 
   @override
-  Widget build(ctx, ref) {
-    final app = ref.watch(appProvider),
-        connection = ref.watch(
-          app.connection,
-        );
+  Widget build(context) {
+    final app = context.watch<Oo8Fractal>();
 
-    return Container(
-      height: 5,
-      color: connection ? Colors.green : Colors.red,
+    return Listen(
+      app.connection.isConnected,
+      (ctx, child) => Container(
+        height: 5,
+        color: app.connection.isConnected.value ? Colors.green : Colors.red,
+      ),
     );
   }
 }

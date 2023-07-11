@@ -1,5 +1,5 @@
-import 'package:nostr_client/nostr_client.dart';
-
+import '../security/generator/random_key_pair_generator.dart';
+import '../security/key_pair.dart';
 import 'app.dart';
 
 class UserNostr {

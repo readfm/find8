@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+/*
 import 'package:http/http.dart' as http;
 import 'package:nostr_client/nostr_client.dart' hide Event;
 import 'package:uuid/uuid.dart';
@@ -87,3 +87,4 @@ class Relay {
     await _channel.sink.close();
   }
 }
+*/

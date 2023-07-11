@@ -16,7 +16,7 @@ class FLine extends StatefulWidget {
     this.content, {
     super.key,
     this.onSelect,
-    this.fontSize = 14,
+    this.fontSize = 10,
   });
 
   @override
@@ -32,12 +32,12 @@ class _FLineState extends State<FLine> {
     final iFirstOpt = widget.content.indexOf('|');
     if (iFirstOpt > 0) {
       final iLastOpt = widget.content.lastIndexOf('|');
-      final iLastWord = widget.content.indexOf(' ', iLastOpt);
-
-      content = widget.content.substring(iLastWord);
+      var iLastWord = widget.content.indexOf(' ', iLastOpt);
+      if (iLastWord < 0) iLastWord = widget.content.length;
+      //content = widget.content.substring(iLastWord);
       options = widget.content.substring(0, iLastWord).split('|');
-    } else
-      content = widget.content;
+    }
+    content = widget.content;
 
     super.initState();
   }
@@ -79,7 +79,7 @@ class _FLineState extends State<FLine> {
             */
           Container(
             width: double.infinity,
-            height: widget.fontSize + 3,
+            height: widget.fontSize + 4,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(

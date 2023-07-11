@@ -22,7 +22,7 @@ class _Input8State extends State<Input8> {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(5),
-      height: widget.fontSize,
+      //height: widget.fontSize + 3,
       child: TextFormField(
         focusNode: focusNode,
         autofocus: true,
@@ -30,6 +30,9 @@ class _Input8State extends State<Input8> {
         style: TextStyle(
           fontSize: widget.fontSize,
         ),
+        //expands: true,
+        //minLines: 1,
+        //maxLines: 8,
         decoration: const InputDecoration(
           isDense: true,
           contentPadding: EdgeInsets.all(0),
